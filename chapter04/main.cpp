@@ -3,15 +3,19 @@
 #include <tchar.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
+#include <DirectXMath.h>
+#include <d3dcompiler.h>
 #include <vector>
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "d3dcompiler.lib")
 
 #ifdef _DEBUG
 #include <iostream>
 #endif // _DEBUG
 
+using namespace DirectX;
 using namespace std;
 
 
@@ -212,6 +216,113 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// ウィンドウ表示
 	ShowWindow(hwnd, SW_SHOW);
+
+	XMFLOAT3 vertices[] =
+	{
+		{-1.0f, -1.0f, 0.0f},
+		{-1.0f, 1.0f, 0.0f},
+		{1.0f, -1.0f, 0.0f}
+	};
+
+	D3D12_HEAP_PROPERTIES heapprop = {};
+	heapprop.Type = D3D12_HEAP_TYPE_UPLOAD;
+	heapprop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	heapprop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+
+	D3D12_RESOURCE_DESC resdesc = {};
+	resdesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	resdesc.Width = sizeof(vertices);
+	resdesc.Height = 1;
+	resdesc.DepthOrArraySize = 1;
+	resdesc.MipLevels = 1;
+	resdesc.Format = DXGI_FORMAT_UNKNOWN;
+	resdesc.SampleDesc.Count = 1;
+	resdesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	resdesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+	// 
+	ID3D12Resource* vertBuff = nullptr;
+	result = _dev->CreateCommittedResource(
+		&heapprop,
+		D3D12_HEAP_FLAG_NONE,
+		&resdesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&vertBuff));
+
+	XMFLOAT3* vertMap = nullptr;
+	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
+	std::copy(std::begin(vertices), std::end(vertices), vertMap);
+	vertBuff->Unmap(0, nullptr);
+
+	D3D12_VERTEX_BUFFER_VIEW vbView = {};
+	vbView.BufferLocation = vertBuff->GetGPUVirtualAddress();
+	vbView.SizeInBytes = sizeof(vertices);
+	vbView.StrideInBytes = sizeof(vertices[0]);
+
+	ID3DBlob* _vsBlob = nullptr;
+	ID3DBlob* _psBlob = nullptr;
+
+	ID3DBlob* errorBlob = nullptr;
+
+	result = D3DCompileFromFile(
+		L"BasicVertexShader.hlsl",	// シェーダー名
+		nullptr,					// defineは無し
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,	// includeはデフォルト
+		"BasicVS",					// エントリポイント
+		"vs_5_0",					// 対象シェーダ
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,	// デバッグ用、最適化なし
+		0,
+		&_vsBlob,
+		&errorBlob);				// エラー時のエラーメッセージ
+
+	if (FAILED(result))
+	{
+		if (result == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+		{
+			::OutputDebugStringA("ファイルが見当たりません\n");
+		}
+		else
+		{
+			std::string errstr;
+			errstr.resize(errorBlob->GetBufferSize());	// 必要なサイズを確保
+			// データコピー
+			std::copy_n((char*)errorBlob->GetBufferPointer(), errorBlob->GetBufferSize(), errstr.begin());
+			errstr += "\n";
+			OutputDebugStringA(errstr.c_str());
+		}
+		exit(1);
+	}
+
+	result = D3DCompileFromFile(
+		L"BasicPixelShader.hlsl",	// シェーダー名
+		nullptr,					// defineは無し
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,	// includeはデフォルト
+		"BasicPS",					// エントリポイント
+		"ps_5_0",					// 対象シェーダ
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,	// デバッグ用、最適化なし
+		0,
+		&_psBlob,
+		&errorBlob);				// エラー時のエラーメッセージ
+
+	if (FAILED(result))
+	{
+		if (result == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+		{
+			::OutputDebugStringA("ファイルが見当たりません\n");
+		}
+		else
+		{
+			std::string errstr;
+			errstr.resize(errorBlob->GetBufferSize());	// 必要なサイズを確保
+			// データコピー
+			std::copy_n((char*)errorBlob->GetBufferPointer(), errorBlob->GetBufferSize(), errstr.begin());
+			errstr += "\n";
+			OutputDebugStringA(errstr.c_str());
+		}
+		exit(1);
+	}
+
 
 	MSG msg = {};
 	while (true)
