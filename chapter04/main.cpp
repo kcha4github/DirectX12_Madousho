@@ -217,11 +217,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// ウィンドウ表示
 	ShowWindow(hwnd, SW_SHOW);
 
+	//XMFLOAT3 vertices[] =
+	//{
+	//	{-1.0f, -1.0f, 0.0f},
+	//	{-1.0f, 1.0f, 0.0f},
+	//	{1.0f, -1.0f, 0.0f}
+	//};
 	XMFLOAT3 vertices[] =
 	{
-		{-1.0f, -1.0f, 0.0f},
-		{-1.0f, 1.0f, 0.0f},
-		{1.0f, -1.0f, 0.0f}
+		{-0.5f, -0.7f, 0.0f},// 左下
+		{-0.1f,  0.8f, 0.0f},// 上
+		{ 0.6f, -0.8f, 0.0f}// 右下
 	};
 
 	D3D12_HEAP_PROPERTIES heapprop = {};
@@ -323,6 +329,74 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		exit(1);
 	}
 
+	D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
+		{ "POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D12_APPEND_ALIGNED_ELEMENT,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0 },
+	};
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC gpipeline = {};
+	gpipeline.pRootSignature = nullptr;
+	gpipeline.VS.pShaderBytecode = _vsBlob->GetBufferPointer();
+	gpipeline.VS.BytecodeLength = _vsBlob->GetBufferSize();
+	gpipeline.PS.pShaderBytecode = _psBlob->GetBufferPointer();
+	gpipeline.PS.BytecodeLength = _psBlob->GetBufferSize();
+
+	gpipeline.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;	// デフォルトのサンプルマスクを表す定数（中身は0xffffffff）
+
+	gpipeline.BlendState.AlphaToCoverageEnable = false;
+	gpipeline.BlendState.IndependentBlendEnable = false;
+
+	D3D12_RENDER_TARGET_BLEND_DESC renderTargetBlendDesc = {};
+	renderTargetBlendDesc.BlendEnable = false;
+	renderTargetBlendDesc.LogicOpEnable = false;
+	renderTargetBlendDesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	gpipeline.BlendState.RenderTarget[0] = renderTargetBlendDesc;
+
+	gpipeline.RasterizerState.MultisampleEnable = false;	// まだアンチエイリアスは使わない
+	gpipeline.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;	// カリングしない
+	gpipeline.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;	// 中身を塗りつぶす
+	gpipeline.RasterizerState.DepthClipEnable = true;			// 深度方向のクリッピングは有効に
+
+	gpipeline.DepthStencilState.DepthEnable = false;
+	gpipeline.DepthStencilState.StencilEnable = false;
+	
+	gpipeline.InputLayout.pInputElementDescs = inputLayout;
+	gpipeline.InputLayout.NumElements = _countof(inputLayout);
+
+	gpipeline.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;	// ストリップ時のカットなし
+	gpipeline.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;	// 三角形で構成
+
+	gpipeline.NumRenderTargets = 1;
+	gpipeline.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+	gpipeline.SampleDesc.Count = 1;
+	gpipeline.SampleDesc.Quality = 0;
+
+	ID3D12RootSignature* rootsignature = nullptr;
+	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc = {};
+	rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+	ID3DBlob* rootSigBlob = nullptr;
+	result = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &rootSigBlob, &errorBlob);
+	result = _dev->CreateRootSignature(0, rootSigBlob->GetBufferPointer(), rootSigBlob->GetBufferSize(), IID_PPV_ARGS(&rootsignature));
+	rootSigBlob->Release();
+	gpipeline.pRootSignature = rootsignature;
+
+	ID3D12PipelineState* _pipelinestate = nullptr;
+	result = _dev->CreateGraphicsPipelineState(&gpipeline, IID_PPV_ARGS(&_pipelinestate));
+
+	D3D12_VIEWPORT viewport = {};
+	viewport.Width = window_width;
+	viewport.Height = window_height;
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+	viewport.MaxDepth = 1.0f;
+	viewport.MinDepth = 0.0f;
+
+	D3D12_RECT scissorrect = {};
+	scissorrect.top = 0;
+	scissorrect.left = 0;
+	scissorrect.right = scissorrect.left + window_width;
+	scissorrect.bottom = scissorrect.top + window_height;
 
 	MSG msg = {};
 	while (true)
@@ -352,6 +426,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		_cmdList->ResourceBarrier(1, &BarrierDesc);
 
+		_cmdList->SetPipelineState(_pipelinestate);
+
+
 		// レンダーターゲットを指定
 		auto rtvH = rtvHeaps->GetCPUDescriptorHandleForHeapStart();
 		rtvH.ptr += bbIdx * _dev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -360,6 +437,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// 画面クリア
 		float clearColor[] = { 1.0f, 1.0f, 0.0f, 1.0f };
 		_cmdList->ClearRenderTargetView(rtvH, clearColor, 0, nullptr);
+
+		_cmdList->RSSetViewports(1, &viewport);
+		_cmdList->RSSetScissorRects(1, &scissorrect);
+		_cmdList->SetGraphicsRootSignature(rootsignature);
+
+		_cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		_cmdList->IASetVertexBuffers(0, 1, &vbView);
+		_cmdList->DrawInstanced(3, 1, 0, 0);
+
 
 		BarrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 		BarrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
@@ -373,6 +459,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		_cmdQueue->ExecuteCommandLists(1, cmdlists);
 
 		_cmdQueue->Signal(_fence, ++_fenceVal);
+
 		if (_fence->GetCompletedValue() != _fenceVal) {
 			// イベントハンドルの取得
 			auto event = CreateEvent(nullptr, false, false, nullptr);
@@ -386,7 +473,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 
 		_cmdAllocator->Reset();
-		_cmdList->Reset(_cmdAllocator, nullptr);
+		_cmdList->Reset(_cmdAllocator, _pipelinestate);
 
 		// フリップ
 		_swapchain->Present(1, 0);
