@@ -1,17 +1,8 @@
-struct Output {
-	float4 pos:POSITION;
-	float4 svpos:SV_POSITION;
-};
-
-
-//float4 BasicVS( float4 pos : POSITION ) : SV_POSITION
-//{
-//	return pos;
-//}
-Output BasicVS(float4 pos : POSITION)
+#include "BasicType.hlsli"
+BasicType BasicVS(float4 pos : POSITION, float2 uv:TEXCOORD)
 {
-	Output output;
-	output.pos = pos;
+	BasicType output;
 	output.svpos = pos;
+	output.uv = uv;
 	return output;
 }
