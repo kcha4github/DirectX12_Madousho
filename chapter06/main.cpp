@@ -556,6 +556,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	XMMATRIX matrix = XMMatrixIdentity();
 	matrix.r[0].m128_f32[0] = 2.0f / window_width;
 	matrix.r[1].m128_f32[1] = -2.0f / window_height;
+	matrix.r[3].m128_f32[0] = -1.0f;
+	matrix.r[3].m128_f32[1] = 1.0f;
 
 	// 定数バッファー作成
 	ID3D12Resource* constBuff = nullptr;
