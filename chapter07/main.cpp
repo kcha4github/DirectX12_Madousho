@@ -536,6 +536,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	scissorrect.right = scissorrect.left + window_width;
 	scissorrect.bottom = scissorrect.top + window_height;
 
+	// シェーダー側に渡すための基本的な行列データ
+	struct MatricesData {
+		XMMATRIX world; // モデル本体を回転させたり移動させたりする行列
+		XMMATRIX viewproj; // ビューとプロジェクションの合成行列
+	};
 
 	// WICテクスチャのロード
 	TexMetadata metadata = {};
@@ -579,32 +584,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	resDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	resDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-	//ID3D12Resource* texbuff = nullptr;
-	//result = _dev->CreateCommittedResource(
-	//	&texHeapProp,
-	//	D3D12_HEAP_FLAG_NONE,
-	//	&resDesc,
-	//	D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-	//	nullptr,
-	//	IID_PPV_ARGS(&texbuff)
-	//);
-
-	//result = texbuff->WriteToSubresource(
-	//	0,
-	//	nullptr, // 全領域にコピー
-	//	texturedata.data(),	// 元データアドレス
-	//	sizeof(TexRGBA) * 256, // 1ラインサイズ
-	//	sizeof(TexRGBA) * texturedata.size() // 全サイズ
-	//);
-	//result = texbuff->WriteToSubresource(
-	//	0,
-	//	nullptr, // 全領域にコピー
-	//	img->pixels,	// 元データアドレス
-	//	img->rowPitch,  // 1ラインサイズ
-	//	img->slicePitch // １枚サイズ
-	//);
-
-	XMMATRIX worldMat = XMMatrixIdentity();
+	//XMMATRIX worldMat = XMMatrixIdentity();
+	XMMATRIX worldMat = XMMatrixRotationY(XM_PIDIV2);
 	XMFLOAT3 eye(0, 10, -15);
 	XMFLOAT3 target(0, 10, 0);
 	XMFLOAT3 up(0, 1, 0);
@@ -621,15 +602,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	result = _dev->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer((sizeof(XMMATRIX) + 0xff) & ~0xff),
+		&CD3DX12_RESOURCE_DESC::Buffer((sizeof(MatricesData) + 0xff) & ~0xff),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&constBuff)
 	);
 
-	XMMATRIX* mapMatrix; // マップ先を示すポインター
+	MatricesData* mapMatrix; // マップ先を示すポインター
 	result = constBuff->Map(0, nullptr, (void**)&mapMatrix); // マップ
-	*mapMatrix = worldMat * viewMat * projMat;
+	// 行列の内容をコピー
+	mapMatrix->world = worldMat;
+	mapMatrix->viewproj = viewMat * projMat;
 
 
 	ID3D12DescriptorHeap* basicDescHeap = nullptr;
@@ -682,9 +665,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			break;
 		}
 
-		//angle += 0.05f;
-		//worldMat = XMMatrixRotationY(angle);
-		//*mapMatrix = worldMat * viewMat * projMat;
+		// ここで回転させる
+		// *********************************
+		worldMat = XMMatrixRotationY(angle);
+		mapMatrix->world = worldMat;
+		mapMatrix->viewproj = viewMat * projMat;
+		angle += 0.025f;
+
 
 		// DirectX処理
 		auto bbIdx = _swapchain->GetCurrentBackBufferIndex();
