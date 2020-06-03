@@ -9,5 +9,8 @@ cbuffer cbuff0 : register(b0) {
 	matrix viewproj; // ビュープロジェクション行列
 };
 
-
-
+cbuffer Material : register(b1) {
+	float4 diffuse;
+	float4 specular;
+	float3 ambient;
+};
