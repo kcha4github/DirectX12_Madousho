@@ -1,5 +1,7 @@
 #include "BasicType.hlsli"
-Texture2D<float4> tex:register(t0);
+Texture2D<float4> tex:register(t0);//0番スロットに設定されたテクスチャ（ベース）
+Texture2D<float4> sph:register(t1);//1番スロットに設定されたテクスチャ（乗算）
+
 SamplerState smp:register(s0);
 
 float4 BasicPS(BasicType input) : SV_TARGET
