@@ -9,12 +9,19 @@ float4 BasicPS(BasicType input) : SV_TARGET
 {
 	float3 light = normalize(float3(1, -1, 1)); // 右下奥向きの光源ベクトル
 	float brightness = dot(-light, input.normal);
-	float2 normalUV = (input.normal.xy + float2(1, -1)) * float2(0.5, -0.5);
+	//float2 normalUV = (input.normal.xy + float2(1, -1)) * float2(0.5, -0.5);
+
+	//スフィアマップ用UV
+	float2 sphereMapUV = input.vnormal.xy;
+	sphereMapUV = (sphereMapUV + float2(1, -1)) * float2(0.5, -0.5);
+
+	float4 texColor = tex.Sample(smp, input.uv);//テクスチャカラー
+
 	return float4(brightness, brightness, brightness, 1)
 		* diffuse //ディフューズ色
-		* tex.Sample(smp, input.uv) //テクスチャカラー
-		* sph.Sample(smp, normalUV) //スフィアマップ（乗算）
-		+ spa.Sample(smp, normalUV);//スフィアマップ（加算）
+		* texColor //テクスチャカラー
+		* sph.Sample(smp, sphereMapUV) //スフィアマップ（乗算）
+		+ spa.Sample(smp, sphereMapUV);//スフィアマップ（加算）
 	//return float4(0, 0, 0, 1);
 	//return float4(tex.Sample(smp,input.uv));
 }

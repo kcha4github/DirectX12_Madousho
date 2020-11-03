@@ -968,9 +968,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	scissorrect.bottom = scissorrect.top + window_height;//切り抜き下座標
 
 	//シェーダ側に渡すための基本的な環境データ
-	struct MatricesData {
+	struct SceneData {
 		XMMATRIX world; // モデル本体を回転させたり移動させたりする行列
-		XMMATRIX viewproj; // ビューとプロジェクションの合成行列
+		XMMATRIX view; // ビュー行列
+		XMMATRIX proj; // プロジェクション行列
 	};
 
 	// WICテクスチャのロード
@@ -1001,7 +1002,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	XMMATRIX worldMat = XMMatrixIdentity();
 	//XMFLOAT3 eye(0, 10, -15);
-	XMFLOAT3 eye(0, 17, -5);
+	XMFLOAT3 eye(0, 17, -10);
+	//XMFLOAT3 eye(0, 17, -5);
 	//XMFLOAT3 target(0, 10, 0);
 	XMFLOAT3 target(0, 17, 0);
 	XMFLOAT3 up(0, 1, 0);
@@ -1017,18 +1019,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	result = _dev->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer((sizeof(MatricesData) + 0xff) & ~0xff),
+		&CD3DX12_RESOURCE_DESC::Buffer((sizeof(SceneData) + 0xff) & ~0xff),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&constBuff)
 	);
 
-	MatricesData* mapMatrix; // マップ先を示すポインター
-	result = constBuff->Map(0, nullptr, (void**)&mapMatrix); // マップ
+	SceneData* mapScene; // マップ先を示すポインター
+	result = constBuff->Map(0, nullptr, (void**)&mapScene); // マップ
 	//行列の内容をコピー
-	mapMatrix->world = worldMat;
-	mapMatrix->viewproj = viewMat * projMat;
-
+	mapScene->world = worldMat;
+	mapScene->view = viewMat;
+	mapScene->proj = projMat;
 
 	ID3D12DescriptorHeap* basicDescHeap = nullptr;
 	D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
@@ -1054,9 +1056,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// ここで回転させる
 		// *********************************
 		worldMat = XMMatrixRotationY(angle);
-		mapMatrix->world = worldMat;
-		mapMatrix->viewproj = viewMat * projMat;
-		//angle += 0.025f;
+		mapScene->world = worldMat;
+		mapScene->view = viewMat;
+		mapScene->proj = projMat;
+		angle += 0.01f;
 
 		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
