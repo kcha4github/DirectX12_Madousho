@@ -6,6 +6,7 @@ struct Output {
 	float4 normal:NORMAL0;//法線ベクトル
 	float4 vnormal:NORMAL1;//ビュー変換後の法線ベクトル
 	float2 uv:TEXCOORD;//uv値
+	float3 ray:VECTOR;//ベクトル
 };
 
 BasicType BasicVS(float4 pos : POSITION, float4 normal : NORMAL, float2 uv:TEXCOORD)
@@ -18,6 +19,7 @@ BasicType BasicVS(float4 pos : POSITION, float4 normal : NORMAL, float2 uv:TEXCO
 	output.normal = mul(world, normal);
 	output.vnormal = mul(view, output.normal);
 	output.uv = uv;
+	output.ray = normalize(pos.xyz - mul(view, eye));//視線ベクトル
 
 	return output;
 }

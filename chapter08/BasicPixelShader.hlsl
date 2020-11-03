@@ -8,8 +8,13 @@ SamplerState smp:register(s0);
 float4 BasicPS(BasicType input) : SV_TARGET
 {
 	float3 light = normalize(float3(1, -1, 1)); // 右下奥向きの光源ベクトル
-	float brightness = dot(-light, input.normal);
-	//float2 normalUV = (input.normal.xy + float2(1, -1)) * float2(0.5, -0.5);
+
+	// ディフューズ計算
+	float diffuseB = saturate(dot(-light, input.normal));
+
+	//光の反射ベクトル
+	float3 refLight = normalize(reflect(light, input.normal.xyz));
+	float specularB = pow(saturate(dot(refLight, -input.ray)), specular.a);
 
 	//スフィアマップ用UV
 	float2 sphereMapUV = input.vnormal.xy;
@@ -17,12 +22,11 @@ float4 BasicPS(BasicType input) : SV_TARGET
 
 	float4 texColor = tex.Sample(smp, input.uv);//テクスチャカラー
 
-	return float4(brightness, brightness, brightness, 1)
+	return max(saturate(diffuseB //輝度
 		* diffuse //ディフューズ色
-		* texColor //テクスチャカラー
-		* sph.Sample(smp, sphereMapUV)//スフィアマップ（乗算）
-		+ spa.Sample(smp, sphereMapUV)//スフィアマップ（加算）
-		+ float4(texColor*ambient, 1);
-	//return float4(0, 0, 0, 1);
-	//return float4(tex.Sample(smp,input.uv));
+		* texColor //テクスチャからー
+		* sph.Sample(smp, sphereMapUV)) //スフィアマップ（乗算）
+		+ saturate(spa.Sample(smp, sphereMapUV) * texColor //スフィアマップ（加算）
+		+ float4(specularB * specular.rgb, 1)) //スペキュラ
+		, float4(texColor * ambient, 1)); //アンビエント
 }

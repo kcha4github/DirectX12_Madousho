@@ -503,8 +503,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//string strModelPath = "../Model/初音ミク.pmd";
 	//string strModelPath = "../Model/初音ミクVer2.pmd";
 	//string strModelPath = "../Model/鏡音リン.pmd";
-	string strModelPath = "../Model/巡音ルカ.pmd";
-	//string strModelPath = "../Model/初音ミクmetal.pmd";
+	//string strModelPath = "../Model/巡音ルカ.pmd";
+	string strModelPath = "../Model/初音ミクmetal.pmd";
 
 
 	FILE* fp;
@@ -972,6 +972,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		XMMATRIX world; // モデル本体を回転させたり移動させたりする行列
 		XMMATRIX view; // ビュー行列
 		XMMATRIX proj; // プロジェクション行列
+		XMFLOAT3 eye; // 視点座標
 	};
 
 	// WICテクスチャのロード
@@ -1032,6 +1033,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	mapScene->world = worldMat;
 	mapScene->view = viewMat;
 	mapScene->proj = projMat;
+	mapScene->eye = eye;
 
 	ID3D12DescriptorHeap* basicDescHeap = nullptr;
 	D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
