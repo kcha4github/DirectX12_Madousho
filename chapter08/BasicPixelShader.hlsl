@@ -20,8 +20,9 @@ float4 BasicPS(BasicType input) : SV_TARGET
 	return float4(brightness, brightness, brightness, 1)
 		* diffuse //ディフューズ色
 		* texColor //テクスチャカラー
-		* sph.Sample(smp, sphereMapUV) //スフィアマップ（乗算）
-		+ spa.Sample(smp, sphereMapUV);//スフィアマップ（加算）
+		* sph.Sample(smp, sphereMapUV)//スフィアマップ（乗算）
+		+ spa.Sample(smp, sphereMapUV)//スフィアマップ（加算）
+		+ float4(texColor*ambient, 1);
 	//return float4(0, 0, 0, 1);
 	//return float4(tex.Sample(smp,input.uv));
 }

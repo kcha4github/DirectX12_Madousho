@@ -1002,10 +1002,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	XMMATRIX worldMat = XMMatrixIdentity();
 	//XMFLOAT3 eye(0, 10, -15);
-	XMFLOAT3 eye(0, 17, -10);
+	XMFLOAT3 eye(0, 13, -14);
+	//XMFLOAT3 eye(0, 17, -10);
 	//XMFLOAT3 eye(0, 17, -5);
 	//XMFLOAT3 target(0, 10, 0);
-	XMFLOAT3 target(0, 17, 0);
+	XMFLOAT3 target(0, 13, 0);
 	XMFLOAT3 up(0, 1, 0);
 	XMMATRIX viewMat = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 	XMMATRIX projMat = XMMatrixPerspectiveFovLH(XM_PIDIV2, // ‰æŠp‚X‚O“x
