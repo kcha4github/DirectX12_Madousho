@@ -3,13 +3,14 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <vector>
-
-#pragma comment(lib, "d3d12.lib")
-#pragma comment(lib, "dxgi.lib")
-
+#include <string>
 #ifdef _DEBUG
 #include <iostream>
 #endif // _DEBUG
+
+
+#pragma comment(lib, "d3d12.lib")
+#pragma comment(lib, "dxgi.lib")
 
 using namespace std;
 
@@ -19,7 +20,7 @@ void DebugOutputFormatString(const char* format, ...)
 #ifdef _DEBUG
 	va_list valist;
 	va_start(valist, format);
-	printf(format, valist);
+	vprintf(format, valist);
 	va_end(valist);
 #endif // _DEBUG
 }
@@ -38,8 +39,8 @@ LRESULT WindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 const unsigned int window_width = 1280;
 const unsigned int window_height = 720;
 
-ID3D12Device* _dev = nullptr;
 IDXGIFactory6* _dxgiFactory = nullptr;
+ID3D12Device* _dev = nullptr;
 IDXGISwapChain4* _swapchain = nullptr;
 ID3D12CommandAllocator* _cmdAllocator = nullptr;
 ID3D12CommandQueue* _cmdQueue = nullptr;
