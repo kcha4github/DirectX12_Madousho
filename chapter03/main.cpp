@@ -118,7 +118,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int){
 
 	// ここに特定の名前を持つアダプターオブジェクトが入る
 	IDXGIAdapter* tmpAdapter = nullptr;
-	for (int i = 0; _dxgiFactory->EnumAdapters(i, &tmpAdapter) != DXGI_ERROR_NOT_FOUND; i++)
+	for (UINT i = 0; _dxgiFactory->EnumAdapters(i, &tmpAdapter) != DXGI_ERROR_NOT_FOUND; i++)
 	{
 		adapters.push_back(tmpAdapter);
 	}
