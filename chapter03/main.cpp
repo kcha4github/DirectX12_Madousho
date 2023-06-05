@@ -105,12 +105,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int){
 		D3D_FEATURE_LEVEL_11_0,
 	};
 
-#ifdef _DEBUG
 	auto result = CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&_dxgiFactory));
-#else
-	auto result = CreateDXGIFactory1(IID_PPV_ARGS(&_dxgiFactory));
-#endif // _DEBUG
-
 	if (FAILED(result)) {
 		result = CreateDXGIFactory2(0, IID_PPV_ARGS(&_dxgiFactory));
 		if (FAILED(result)) {
